@@ -1,0 +1,40 @@
+#!/usr/bin/expect
+
+set timeout 20
+
+set net_id [lindex $argv 0]
+set password [lindex $argv 1]
+set vm_num [lindex $argv 2]
+
+# This fingerprint may not be known, in which
+# case we need to add it to our permanent 
+# SSH addresses
+# NOTE: this script will add it to the permanent
+# address. If you do not want that, change 
+# this
+# Other option to replace "yes" with: "fingerprint"
+set fingerprint_response yes
+
+eval spawn ssh $net_id@fa24-cs426-$vm_num.cs.illinois.edu 
+
+# We expect SSH to ask for our password, 
+# in which case we will enter it using send
+
+# SSH address may not be recognized
+expect {
+    "fingerprint]" {
+        send "$fingerprint_response\r"
+        expect_continue
+    }
+    "password" {
+        send "$password\r"
+    }
+}
+
+expect "Last login:"
+send "clear\r";
+
+# This allows us to actually interact with the
+# SSH terminal, instead of just existing in the
+# background
+interact

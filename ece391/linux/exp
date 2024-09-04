@@ -1,0 +1,19 @@
+#!/usr/bin/expect
+
+set timeout 20
+
+set cmd [lrange $argv 2 end]
+set prompt [lindex $argv 0]
+set response [lindex $argv 1]
+
+eval spawn $cmd
+
+# We expect SSH to ask for our password, 
+# in which case we will enter it using send
+expect "$prompt"
+send "$response\r";
+
+# This allows us to actually interact with the
+# SSH terminal, instead of just existing in the
+# background
+interact

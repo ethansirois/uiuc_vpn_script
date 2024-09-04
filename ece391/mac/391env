@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# This script should have access to your $PATH variable. 
+# I have mine located in ~/bin, but you could also put it 
+# in /usr/bin, or put it somewhere else and then add it to 
+# your $PATH variable by editing your ~/.bashrc or something.
+
+# To run this script, just enter your NetID in the NETID variable,
+# and enter your NetID password in the PW variable. I have provided
+# some more insight in the comments below.
+
+# Also, you can adjust the SSH address to SSH into another EWS machine
+# for another course in the future. Also, the expect script, "exp", is 
+# really useful for many automated tasks in the terminal, as you can 
+# use it to input text when the command expects input. In this case,
+# once SSH connection is established, it asks you to enter your 
+# NetID password through stdin (the command line). Using exp,
+# it can enter this password for you, so the entire pipeline is automated
+# to get you into the EWS machine remotely. It's pretty neat.
+
+
+# Enter your NetID username.
+# E.g., NETID="esirois3"
+NETID=""
+
+# Enter your NetID password inside the quotation marks.
+# E.g., PW="mypassword"
+PW=""
+
+# This establishes the connection to the EWS machine through SSH 
+# after the VPN connection is finished, although it may try to 
+# SSH even if the VPN connection failed for whatever reason. 
+# Like I said, just CTRL-C to exit the SSH when it hangs indefinitely, 
+# and try to resolve the issue that caused the VPN connection to fail. 
+# You can check the oclog.txt file for output messages from 
+# the VPN script to see any connection issues.
+# oclog.txt should be located in /tmp/oclog.txt
+exp "password:" "$PW" ssh "$NETID@eceb-3026.ews.illinois.edu"

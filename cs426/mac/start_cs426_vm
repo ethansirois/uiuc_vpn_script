@@ -1,0 +1,54 @@
+#!/usr/bin/expect
+
+set timeout 20
+
+set net_id [lindex $argv 0]
+set password [lindex $argv 1]
+set vm_num [lindex $argv 2]
+
+# This fingerprint may not be known, in which
+# case we need to add it to our permanent 
+# SSH addresses
+# NOTE: this script will add it to the permanent
+# address. If you do not want that, change 
+# this
+# Other option to replace "yes" with: fingerprint
+set fingerprint_response yes
+
+set machine fa24-cs426-$vm_num
+
+set vm_addr $machine.cs.illinois.edu
+
+puts "vm address: $vm_addr"
+
+# We first need to turn on the VM
+eval spawn ssh $net_id@linux.ews.illinois.edu
+
+# SSH address may not be recognized
+expect {
+    "fingerprint]" {
+        send "$fingerprint_response\r"
+        expect_continue
+    }
+    "password" {
+        send "$password\r"
+    }
+}
+
+#expect "$net_id@linux-ssh"
+#send "clear\r"
+
+expect "$net_id@linux-ssh"
+send "cs-vmfarm-poweron\r"
+
+expect "User:"
+send "$net_id\r"
+
+send "$password\r"
+
+send "$vm_addr\r"
+
+expect "$net_id@linux-ssh"
+send "exit\r"
+
+

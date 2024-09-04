@@ -1,0 +1,163 @@
+#!/bin/bash
+
+# DISCLAIMER: I do not claim ownership of this material.
+# All credit goes to Jeff Stern at UCI. His original material can be found on the link below.
+# I essentially copy-pasted it, besides changing around a few things to automate the
+# call to openconnect (automating the password entering and Duo Push, and 
+# changing the connection type and domain). But yea, huge shoutout to him for creating this
+# whole thing.
+#
+# uiucvpnup and uiucvpndown are taken from ucivpnup and ucivpndown, respectively, from
+# http://www.socsci.uci.edu/~jstern/uci_vpn_ubuntu/ubuntu-openconnect-uci-instructions.html
+
+# NOTE: You should not have to edit any of the following lines, unless you want to change the vpn connection type (2 way tunnel, split tunnel, etc) 
+
+if [ "$#" != 2 ]; then 
+    echo "ERROR: Invalid arguments provided. Please provide your username and password."
+    echo "You provided $# arguments."
+    exit 1
+fi
+# VPNUSER
+# This is your UIUC NetID.
+VPNUSER="$1"
+
+# PW
+# This is your UIUC NetID password. 
+PW="$2"
+
+# EXECUTABLE LOCATIONS
+OPENVPNEXE='/usr/sbin/openvpn'
+OPENCONNECTEXE='/usr/sbin/openconnect'
+IPEXE='/bin/ip'
+if [[ ! -f "${OPENVPNEXE}" ]]; then
+  echo "ERROR: ${OPENVPNEXE} does not exist on your system. Please install."
+  exit 1
+fi
+if [[ ! -f "${OPENCONNECTEXE}" ]]; then
+  echo "ERROR: ${OPENCONNECTEXE} does not exist on your system. Please install."
+  exit 1
+fi
+if [[ ! -f "${IPEXE}" ]]; then
+  echo "ERROR: ${IPEXE} does not exist on your system. Please install."
+  exit 1
+fi
+
+# VPNGRP
+# I'm honestly not too sure what the different connection types are provided 
+# for UIUC, but this one works to get you permissions to SSH into an EWS machine.
+VPNGRP="OpenConnect1"
+
+# Duo Push is the method that is easiest. I messed with the SMS method, but it 
+# is kind of annoying because you need two password prompts, twice. If you want 
+# to do SMS, OpenConnect will want your password as input, then "sms" as the next 
+# input. Then it will ask you to re-enter your NetID password again, and then for 
+# the 4th password you put in the SMS code. You can do this, but it is annoying
+# to automate, so I would just recommend using Duo Push if you can. If you wanted,
+# you could also just provide a one-time password (the ones that change every 30 seconds)
+# as the second password, and that would also work. That would probably be pretty
+# easy to program as well, as you could just provide it as a command-line argument
+# when calling "uiucvpnup". I just figured that not that many people would use it.
+UIUC_AUTH_METHOD="push"
+
+# where you want any output of status / errors to go
+# (this should match same var in the uiucvpndown script)
+# (required)
+OCLOG="/tmp/oclog.txt"
+
+# where you will be connecting to for your VPN services
+# (required)
+VPNURL="vpn.illinois.edu"
+
+# These are just guesses. If neither of these work on your
+# system, you'll need to find where this is
+if [[ -f "/usr/share/vpnc-scripts/vpnc-script" ]]; then
+	VPNSCRIPT="/usr/share/vpnc-scripts/vpnc-script"
+elif [[ -f "/etc/openconnect/vpnc-script" ]]; then
+	VPNSCRIPT='/etc/openconnect/vpnc-script'
+else
+  echo "ERROR: I cannot find a 'vpnc-script' on your system. Please install via your distro's particular package manager."
+  exit 1
+
+fi	
+
+# --<<<END-EDIT>>>--------------------------------------------------------
+# (you should not have to change or edit anything below here)
+
+# become root if not already
+if [ $EUID != 0 ]; then
+    sudo "$0" "$1" "$2"
+    exit $?
+fi
+
+# timestamp
+echo "`date`: Script ${0} starting." >> "${OCLOG}" 2>&1
+
+# first job: make a copy of /etc/resolv.conf since this file gets
+# replaced by vpnc-script and needs to be restored by ucivpndown
+# when vpn is shut back down
+cp /etc/resolv.conf /tmp/resolv.conf.tmp
+
+# Make an openvpn tunnel (interface), and if successful, use it to
+# connect to our Cisco server. Script will hold with connection
+# running until you hit Ctrl-C from the keyboard.
+numtuns=`${IPEXE} link show tun1 2> /dev/null | wc -l`
+if [ "${numtuns}" -eq 0 ]; then
+	echo "`date`: Creating tun1 openvpn interface." >> "${OCLOG}" 2>&1
+	${OPENVPNEXE} --mktun --dev tun1 >> "${OCLOG}" 2>&1
+	# check successful, else quit
+	if [ $? -eq 0 ]; then
+		echo "`date`: tun1 openvpn interface created successfully." >> "${OCLOG}" 2>&1
+		# we only want to copy over the temporary conf file if we were successful in
+		# connecting.  (If we copied over when we were *not* successful, we would end up
+		# (in the ucivpndown script) copying the wrong resolv.conf back to /etc/!)
+		cp /tmp/resolv.conf.tmp /tmp/resolv.conf
+	else
+		echo "`date`: Problems creating tun1 openvpn interface. Exiting 1." >> "${OCLOG}" 2>&1
+		exit 1
+	fi
+else
+	echo "`date`: tun1 openvpn interface already exists. Exiting." >> "${OCLOG}" 2>&1
+	exit 0
+fi
+
+# Turn on tun1 openvpn interface. If it is already on, it won't hurt
+# anything.
+echo "`date`: Turning tun1 on." >> "${OCLOG}" 2>&1
+ifconfig tun1 up >> "${OCLOG}" 2>&1
+#${IPEXE} link set tun1 up "${OCLOG}" 2>&1
+# check successful, else quit
+if [ $? -eq 0 ]; then
+	echo "`date`: tun1 on." >> "${OCLOG}" 2>&1
+else
+	echo "`date`: Problems turning tun1 on. (This may leave tun1 existing though.) Exiting 1." >> "${OCLOG}" 2>&1
+	exit 1
+fi
+
+# Check for any pre-existing openconnect connections. If one exists
+# already, we will not create a new one.
+pidofoc=`pidof openconnect`
+echo "`date`: Running openconnect." >> "${OCLOG}" 2>&1
+
+echo "Please accept the Duo Push notification that will be sent within the next second."
+
+if [ "$pidofoc" == "" ]; then
+	echo -e "${PW}\n${UIUC_AUTH_METHOD}" | ${OPENCONNECTEXE} -b -s "${VPNSCRIPT}" \
+						--user="${VPNUSER}" \
+						--authgroup="${VPNGRP}" \
+						--interface="tun1" \
+						"${VPNURL}"
+else
+	echo "`date`: Not initiating an openconnect session because one appears to already exist: PID=${pidofoc}" >> "${OCLOG}" 2>&1
+fi
+
+# give a chance for stuff to click into place..
+sleep 3
+
+# if you want, you can optionally show the new IP info to the user
+# ip address show tun1
+
+# and log same info
+ip address show tun1 &>> "${OCLOG}"
+
+# end script
+echo "`date`: ${0} script ending successfully." >> "${OCLOG}" 2>&1
