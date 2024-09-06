@@ -1,4 +1,4 @@
-Please visit the folder for the course that you want to use the automatic VPN&SSH connection to. In there, select your OS. In that folder you should see a README.md with specific information for that specific course.
+Please visit the folder for the course that you want to use the automatic VPN&SSH connection to. In there, select your OS. In that folder you should see a README.md with specific information and guidance for utilizing the script for that specific course.
 NOTE: I believe that Windows users can use the Linux scripts if they use ```wsl``` to emulate Linux, and then run the scripts. I could be pretty wrong on that though. It has not been tested (to my knowledge...).
 
 Note that if SSH hangs (it is just sitting there and nothing is happening for ~10 seconds), just hit CTRL-C to cancel the process, and try running the script again. This is a bug that happens every once in a while with the script that I am working to fix. It shouldn’t be an issue, but just might require you to rerun the script.
