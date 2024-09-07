@@ -43,17 +43,8 @@ PW=""
 # E.g., VM_NUMBER="123"
 VM_NUMBER=""
 
-# This enables the VPN to UIUC's Cisco server. This allows you
-# to connect to the EWS machines via SSH. I put in some notes 
-# inside the uiucvpnup script to guide you in the right direction
-# for changing the connection type, and the 2FA method.
-
-# But first, we need to close any VPN tunnels if they're already 
-# opened
-uiucvpndown
-
-uiucvpnup "$NETID" "$PW"
-
+# Mac users, enable the VPN manually through CISCO 
+# AnyConnect software.
 
 # We need to actually power on the VM first. If the VM is already
 # powered on, this won't do anything, so no harm in running this
@@ -69,7 +60,3 @@ start_cs426_vm "$NETID" "$PW" "$VM_NUMBER"
 # the VPN script to see any connection issues.
 # oclog.txt should be located in /tmp/oclog.txt
 enter_cs426_env "$NETID" "$PW" "$VM_NUMBER" 
-
-# This terminates the VPN and restores you back to your normal connection
-# after you exit the SSH.
-uiucvpndown
