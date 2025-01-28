@@ -16,7 +16,7 @@ For RHE machines, I think you just replace apt-get with yum or something. Other 
 
 After downloading them, you need to make them executable using the command:
 ```
-chmod +x 426env uiucvpnup uiucvpndown enter_cs426_env start_cs426_vm
+chmod +x 391env uiucvpnup uiucvpndown exp
 ```
 Note: These files should all be located somewhere that has access to your $PATH variable. I put mine in ```~/bin``` You could also put these in ```/usr/bin``` or something.
 
