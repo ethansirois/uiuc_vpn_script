@@ -38,3 +38,5 @@ To exit the CS 426 VM machine, just run:
 exit
 ```
 In the terminal, and it should bring you back to your desktop.
+
+NOTE: This whole script is a little finnicky due to powering on the VM. It's pretty random, I'd say about 1/2 or 1/3 chance it works, so sometimes you have to run it multiple times. This is because the script tries to continue while the VM is still  being powered on.
