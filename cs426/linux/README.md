@@ -4,11 +4,11 @@ Here is the step-by-step guide on how to set-up the automatic connection to the 
 
 **1.** Download necessary packages. You need to install the following dependent packages before you can run this script:
 ```
-openconnect lib32ncurses5 lib32tinfo5 lib32z1 libc6-i386 libpkcs11-helper1 openvpn vpnc-scripts net-tools
+openconnect expect lib32ncurses5 lib32tinfo5 lib32z1 libc6-i386 libpkcs11-helper1 openvpn vpnc-scripts net-tools
 ```
 For debian/ubuntu machines, you can just run
 ```
-sudo apt-get install openconnect lib32ncurses6 lib32tinfo6 lib32z1 libc6-i386 libpkcs11-helper1t64 openvpn vpnc-scripts net-tools
+sudo apt-get install expect openconnect lib32ncurses6 lib32tinfo6 lib32z1 libc6-i386 libpkcs11-helper1t64 openvpn vpnc-scripts net-tools
 ```
 For RHE machines, I think you just replace apt-get with yum or something. Other distros have their own package managers, and you can just use that.
 
